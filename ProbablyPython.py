@@ -2,6 +2,7 @@
 
 import random
 import math
+import argparse
 from PIL import Image
 
 WHITE = (255,255,255,255)
@@ -12,7 +13,7 @@ BLUE = (0,0,255,255)
 
 
 def save(image, gifStore, inputsReceived):
-    if inputsReceived['isGif'] == 1:
+    if inputsReceived['isGif'] == True:
         # these two lines just break things. Goddamnit.
         # for frame in gifStore:
         #     gifStore[frame].resize((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']))
@@ -99,12 +100,12 @@ def solveMaze(stats, img, solvePosX, solvePosY, stack, gifStore):
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX, solvePosY + 2] = tuple([math.floor(x) for x in colorStorage])
 
-        # colorCount += 2
+        stats['colorCount'] += 2
         solvePosX = solvePositions[0]
         solvePosY = solvePositions[1]
-        if inputsReceived['isGif'] == 1:
+        if inputsReceived['isGif'] == True:
             frame = myimage.copy()
-            frame.resize(((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']), Image.NEAREST))
+            frame.resize((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']), Image.NEAREST)
             gifStore.append(frame)
         stats['solveCount'] += 1
     return img
@@ -122,7 +123,7 @@ def generateMaze(image, inputsReceived):
     while not mazeMade:
         availableDir = []
 
-        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] == 1 and posX == inputsReceived['sizeX'] - 2 and posY == inputsReceived['sizeY'] - 2:
+        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] == True and posX == inputsReceived['sizeX'] - 2 and posY == inputsReceived['sizeY'] - 2:
             # computer starts at 0, so size is already + 1
             print("Solving maze starts now " + str(posX) + "," + str(posY) + "," + str(inputsReceived['sizeX'] - 2) + "," + str(inputsReceived['sizeY'] - 2))
             img = solveMaze(stats, img, posX, posY, leStack, gifStore)
@@ -164,7 +165,7 @@ def generateMaze(image, inputsReceived):
                 img[posX, posY+2] = WHITE
                 posY += 2
 
-            if inputsReceived['isGif'] == 1:
+            if inputsReceived['isGif'] == True:
                 frame = myimage.copy()
                 frame.resize((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']), Image.NEAREST)
                 gifStore.append(frame)
@@ -180,6 +181,7 @@ def generateMaze(image, inputsReceived):
 
 
 def printStats(stats):
+    print("colorCount: " + str(stats['colorCount']))
     print("leSavedStack: " + str(stats['leSavedStack']))
     print("count: " + str(stats['count']))
     print("solveCount: " + str(stats['solveCount']))
@@ -187,34 +189,38 @@ def printStats(stats):
 
 
 def getInputs():
-    # scale is in here because I dont want to go look for the most efficient to use it at the moment.
-    inputsReceived= {'sizeX': None, 'sizeY': None, 'shouldSolve': None, 'solveColor': None, 'isGif': None, 'scale': 3}
+    parser = argparse.ArgumentParser()
+    parser.add_argument("sizeX", help="int, set size on the 'x' axis", type=int)
+    parser.add_argument("sizeY", help="int, set size on the 'y' axis", type=int)
+    parser.add_argument("--shouldSolve", help="sets whether or not to solve the maze, needs solveColor",
+                        default=False, action='store_true')
+    parser.add_argument("--solveColor", help="0:rainbow,1:red&blue,2:RGB, sets which colors are used for the solution",
+                        default=None, type=int)
+    parser.add_argument("--isGif", help="sets if maze should be saved as gif", default=False, action='store_true')
+    args = parser.parse_args()
+    if args.shouldSolve == True and not args.solveColor:
+        parser.error('need --solveColor when using --shouldSolve')
+    if args.solveColor == True and not args.shouldSolve:
+        parser.error('cant use --solveColor when shouldSolve == False')
+    if args.solveColor < 0 or args.solveColor > 2:
+        parser.error('--solveColor needs to be between 0 and 2')
+    # scale is in here because I dont want to go look for the most efficient place to put it at the moment.
+    inputsReceived= {'sizeX': args.sizeX, 'sizeY': args.sizeY, 'shouldSolve': args.shouldSolve,
+                     'solveColor': args.solveColor, 'isGif': args.isGif, 'scale': 3}
     # divided by 2, floored, and then multiplied by 2 to make the plus 1 give a border
     # without having to make unnecessary if statements.
     # Much more elegant, for a possibly smaller number.
-    print("sizeX")
-    inputsReceived['sizeX'] = math.floor(int(input())/2) * 2 + 1
-    print("sizeY")
-    inputsReceived['sizeY'] = math.floor(int(input())/2) * 2 + 1
+    inputsReceived['sizeX'] = (math.floor(inputsReceived['sizeX']/2) * 2) + 1
+    inputsReceived['sizeY'] = (math.floor(inputsReceived['sizeY']/2) * 2) + 1
 
-    # this needs to be done so much better.
     if inputsReceived['sizeX'] < 5:
         inputsReceived['sizeX'] = 5
     if inputsReceived['sizeY'] < 5:
         inputsReceived['sizeY'] = 5
-
-    print("solve?(1:true,0:false)")
-    inputsReceived['shouldSolve'] = int(input())
-    if inputsReceived['shouldSolve'] == 1:
-        print("color?(1:red&blue,2:RGB,0:rainbow)")
-        inputsReceived['solveColor'] = int(input())
-    print("gif?(1:true,0:false)")
-    inputsReceived['isGif'] = int(input())
     return inputsReceived
 
 
-
 if __name__ == "__main__":
-    inputsReceived= getInputs()
+    inputsReceived = getInputs()
     myimage = Image.new('RGBA', (inputsReceived['sizeX'],inputsReceived['sizeY']), color=BLACK)
     generateMaze(myimage, inputsReceived)
