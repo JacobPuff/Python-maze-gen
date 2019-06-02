@@ -206,7 +206,7 @@ def getInputs():
         parser.error('need --solveColor when using --shouldSolve')
     if args.solveColor and not args.shouldSolve:
         parser.error('cant use --solveColor when shouldSolve == False')
-    if args.solveColor < 0 or args.solveColor > 2:
+    if args.solveColor is not None and (args.solveColor < 0 or args.solveColor > 2):
         parser.error('--solveColor needs to be between 0 and 2')
     inputsReceived= {'sizeX': args.sizeX, 'sizeY': args.sizeY, 'shouldSolve': args.shouldSolve,
                      'solveColor': args.solveColor, 'isGif': args.isGif}
