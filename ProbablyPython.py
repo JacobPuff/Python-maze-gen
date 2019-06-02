@@ -4,167 +4,217 @@ import random
 import math
 from PIL import Image
 
-# divided by 2, floored, and then multiplied by 2 to make the plus 1 give a border
-# without having to make unnecessary if statements.
-# Much more elegant, for a possibly smaller number.
-print("sizeX")
-sizeX = math.floor(int(input())/2) * 2 + 1
-print("sizeY")
-sizeY = math.floor(int(input())/2) * 2 + 1
-print("solve?(1:true,0:false)")
-shouldSolve = int(input())
-print("gif?(1:true,0:false)")
-isGif = int(input())
-gifStore = []
-# this needs to be done so much better.
-if sizeX < 5:
-    sizeX = 5
-if sizeY < 5:
-    sizeY = 5
-
-leStack = []
-leSolvedStack = []
-count = 0
-solveCount = 0
-posX = 1
-posY = 1
-scale = 3
 WHITE = (255,255,255,255)
 BLACK = (0,0,0,255)
 RED = (255,0,0,255)
+GREEN = (0,255,0,255)
 BLUE = (0,0,255,255)
-colorStorage = [0,0,0,255]
-colorFade = 0
-mazeMade = False
-solveMaze = False
-myimage = Image.new('RGBA', (sizeX,sizeY), color=BLACK)
-img = myimage.load()
-img[1,1] = WHITE
-while not mazeMade:
-    availableDir = []
 
-    if shouldSolve == 1 and posX == sizeX - 2 and posY == sizeY - 2:
-        #computer starts at 0, so size is already + 1
-        leSolvedStack = leStack.copy()
-        solvePosX = posX
-        solvePosY = posY
-        colorFade = 255/(len(leSolvedStack) * 2)
-        colorStorage = [0,0,255,255]
-        img[posX, posY] = BLUE
-        solveMaze = True
 
-    while solveMaze:
+def save(image, gifStore, inputsReceived):
+    if inputsReceived['isGif'] == 1:
+        # these two lines just break things. Goddamnit.
+        # for frame in gifStore:
+        #     gifStore[frame].resize((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']))
+        gifStore[0].save('derperder.gif',
+                         save_all=True,
+                         append_images=gifStore[1:],
+                         duration=30,
+                         loop=0)
+    else:
+        image = image.resize((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']))
+        image.save("ermahgerd.png", "PNG")
+
+
+def setNextColor(stackLength, color, inputsReceived):
+    colorFade = 0
+    if inputsReceived['solveColor'] == 1:
+        colorFade = 255/(stackLength * 2)
+    elif inputsReceived['solveColor'] == 2:
+        colorFade = 255*2/(stackLength * 2)
+    elif inputsReceived['solveColor'] == 0:
+        colorFade = (255*5)/(stackLength * 2)
+
+    if inputsReceived['solveColor'] == 1:
+        color[0] += colorFade
+        color[2] -= colorFade
+
+    if inputsReceived['solveColor'] == 2 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and math.floor(color[2]) >= 0:
+        color[1] += colorFade
+        color[2] -= colorFade
+    elif inputsReceived['solveColor'] == 2 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and math.floor(color[1]) >= 0:
+        color[0] += colorFade
+        color[1] -= colorFade
+    elif inputsReceived['solveColor'] == 2 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and math.floor(color[0]) >= 0:
+        color[2] += colorFade
+        color[0] -= colorFade
+
+    if inputsReceived['solveColor'] == 0:
+        return
+    # print("colorStorage: " + str(colorStorage))
+    # print("colorCount: " + str(colorCount))
+    return color
+
+
+def solveMaze(stats, img, solvePosX, solvePosY, stack, gifStore):
+    solvingMaze = True
+    colorStorage = [0,0,255,255]
+    img[solvePosX, solvePosY] = BLUE
+    leSolvedStack = stack.copy()
+    # it already starts with one filled in, and ends with one that it doesn't move to,
+    # but we still need that to calculate colorFade.
+    stats['leSavedStack'] = len(leSolvedStack)+2
+    while solvingMaze:
         # Once I hit the end, copy the stack, then,
         # go through the whole stack and paint the solution
         # then make the rest of the maze from the regular stack afterwards.
-        print("SOLVING: " + str(solveCount))
-        solveCount += 1
+        # print("SOLVING: " + str(stats['solveCount']))
         if solvePosX == 1 and solvePosY == 1:
-            solveMaze = False
+            print("ending maze solving")
+            solvingMaze = False
         else:
             solvePositions = leSolvedStack.pop()
 
         if solvePositions[0] < solvePosX:
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX - 1, solvePosY] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX - 2, solvePosY] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
 
         if solvePositions[0] > solvePosX:
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX + 1, solvePosY] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX + 2, solvePosY] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
 
         if solvePositions[1] < solvePosY:
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX, solvePosY - 1] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX, solvePosY - 2] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
 
         if solvePositions[1] > solvePosY:
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX, solvePosY + 1] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
             img[solvePosX, solvePosY + 2] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage[0] += colorFade
-            colorStorage[2] -= colorFade
 
+        # colorCount += 2
         solvePosX = solvePositions[0]
         solvePosY = solvePositions[1]
-        if isGif == 1:
+        if inputsReceived['isGif'] == 1:
             frame = myimage.copy()
-            frame.resize((sizeX*scale,sizeY*scale), Image.NEAREST)
+            frame.resize(((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']), Image.NEAREST))
             gifStore.append(frame)
+        stats['solveCount'] += 1
+    return img
 
-    # Dont want to have them right next to other sections. So move by 2
-    if posX - 2 > 0 and img[posX - 2, posY] == BLACK:
-        availableDir.append(0)
-    if posX + 2 < sizeX and img[posX + 2, posY] == BLACK:
-        availableDir.append(1)
-    if posY - 2 > 0 and img[posX, posY - 2] == BLACK:
-        availableDir.append(2)
-    if posY + 2 < sizeY and img[posX, posY + 2] == BLACK:
-        availableDir.append(3)
 
-    if len(availableDir) > 0:
-        print(count)
-        count += 1
-        leStack.append((posX,posY))
-        randomDir = math.floor(random.random() * (len(availableDir) - 0.01))
-        chosenDir = availableDir[randomDir]
+def generateMaze(image, inputsReceived):
+    gifStore = []
+    leStack = []
+    img = image.load()
+    stats = {'count': 0, 'solveCount': 0, 'colorCount': 0, 'leSavedStack': 0}
+    mazeMade = False
+    posX = 1
+    posY = 1
+    img[posX,posY] = WHITE
+    while not mazeMade:
+        availableDir = []
 
-        if chosenDir == 0:
-            img[posX-1, posY] = WHITE
-            img[posX-2, posY] = WHITE
-            posX -= 2
+        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] == 1 and posX == inputsReceived['sizeX'] - 2 and posY == inputsReceived['sizeY'] - 2:
+            # computer starts at 0, so size is already + 1
+            print("Solving maze starts now " + str(posX) + "," + str(posY) + "," + str(inputsReceived['sizeX'] - 2) + "," + str(inputsReceived['sizeY'] - 2))
+            img = solveMaze(stats, img, posX, posY, leStack, gifStore)
 
-        if chosenDir == 1:
-            img[posX+1, posY] = WHITE
-            img[posX+2, posY] = WHITE
-            posX += 2
+        # Dont want to have them right next to other sections. So move by 2
+        if posX - 2 > 0 and img[posX - 2, posY] == BLACK:
+            availableDir.append(0)
+        if posX + 2 < inputsReceived['sizeX'] and img[posX + 2, posY] == BLACK:
+            availableDir.append(1)
+        if posY - 2 > 0 and img[posX, posY - 2] == BLACK:
+            availableDir.append(2)
+        if posY + 2 < inputsReceived['sizeY'] and img[posX, posY + 2] == BLACK:
+            availableDir.append(3)
 
-        if chosenDir == 2:
-            img[posX, posY-1] = WHITE
-            img[posX, posY-2] = WHITE
-            posY -= 2
+        if len(availableDir) > 0:
+            # print(count)
+            stats['count'] += 1
+            leStack.append((posX,posY))
+            randomDir = math.floor(random.random() * (len(availableDir) - 0.01))
+            chosenDir = availableDir[randomDir]
 
-        if chosenDir == 3:
-            img[posX, posY+1] = WHITE
-            img[posX, posY+2] = WHITE
-            posY += 2
+            if chosenDir == 0:
+                img[posX-1, posY] = WHITE
+                img[posX-2, posY] = WHITE
+                posX -= 2
 
-        if isGif == 1:
-            frame = myimage.copy()
-            frame.resize((sizeX*scale,sizeY*scale), Image.NEAREST)
-            gifStore.append(frame)
+            if chosenDir == 1:
+                img[posX+1, posY] = WHITE
+                img[posX+2, posY] = WHITE
+                posX += 2
 
-    elif posX == 1 and posY == 1:
-        mazeMade = True
-    else:
-        positions = leStack.pop(len(leStack)-1)
-        posX = positions[0]
-        posY = positions[1]
+            if chosenDir == 2:
+                img[posX, posY-1] = WHITE
+                img[posX, posY-2] = WHITE
+                posY -= 2
 
-if isGif == 1:
-    # these two lines just break things. Goddamnit.
-    # for frame in gifStore:
-    #     gifStore[frame].resize((sizeX*scale,sizeY*scale))
-    gifStore[0].save('derperder.gif',
-                     save_all=True,
-                     append_images=gifStore[1:],
-                     duration=30,
-                     loop=0)
-else:
-    myimage = myimage.resize((sizeX*scale,sizeY*scale))
-    myimage.save("ermahgerd.png", "PNG")
+            if chosenDir == 3:
+                img[posX, posY+1] = WHITE
+                img[posX, posY+2] = WHITE
+                posY += 2
 
-print("count: " + str(count))
-print("solveCount: " + str(solveCount))
-print("totalSteps: " + str(count+solveCount))
+            if inputsReceived['isGif'] == 1:
+                frame = myimage.copy()
+                frame.resize((inputsReceived['sizeX']*inputsReceived['scale'],inputsReceived['sizeY']*inputsReceived['scale']), Image.NEAREST)
+                gifStore.append(frame)
+
+        elif posX == 1 and posY == 1:
+            mazeMade = True
+        else:
+            positions = leStack.pop(len(leStack)-1)
+            posX = positions[0]
+            posY = positions[1]
+    printStats(stats)
+    save(image, gifStore, inputsReceived)
+
+
+def printStats(stats):
+    print("leSavedStack: " + str(stats['leSavedStack']))
+    print("count: " + str(stats['count']))
+    print("solveCount: " + str(stats['solveCount']))
+    print("totalSteps: " + str(stats['count']+stats['solveCount']))
+
+
+def getInputs():
+    # scale is in here because I dont want to go look for the most efficient to use it at the moment.
+    inputsReceived= {'sizeX': None, 'sizeY': None, 'shouldSolve': None, 'solveColor': None, 'isGif': None, 'scale': 3}
+    # divided by 2, floored, and then multiplied by 2 to make the plus 1 give a border
+    # without having to make unnecessary if statements.
+    # Much more elegant, for a possibly smaller number.
+    print("sizeX")
+    inputsReceived['sizeX'] = math.floor(int(input())/2) * 2 + 1
+    print("sizeY")
+    inputsReceived['sizeY'] = math.floor(int(input())/2) * 2 + 1
+
+    # this needs to be done so much better.
+    if inputsReceived['sizeX'] < 5:
+        inputsReceived['sizeX'] = 5
+    if inputsReceived['sizeY'] < 5:
+        inputsReceived['sizeY'] = 5
+
+    print("solve?(1:true,0:false)")
+    inputsReceived['shouldSolve'] = int(input())
+    if inputsReceived['shouldSolve'] == 1:
+        print("color?(1:red&blue,2:RGB,0:rainbow)")
+        inputsReceived['solveColor'] = int(input())
+    print("gif?(1:true,0:false)")
+    inputsReceived['isGif'] = int(input())
+    return inputsReceived
+
+
+
+if __name__ == "__main__":
+    inputsReceived= getInputs()
+    myimage = Image.new('RGBA', (inputsReceived['sizeX'],inputsReceived['sizeY']), color=BLACK)
+    generateMaze(myimage, inputsReceived)
