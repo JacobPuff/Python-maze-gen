@@ -92,7 +92,7 @@ def generateMazeSolution(stats, img, solvePosX, solvePosY, stack, scale, gifStor
     leSolvedStack = stack.copy()
     # it already starts with one filled in, and ends with one that it doesn't move to,
     # but we still need that to calculate colorFade.
-    stats['leSavedStack'] = len(leSolvedStack)+2
+    stats['leSavedStack'] = len(leSolvedStack)
     while solvingMaze:
         # Once I hit the end, copy the stack, then,
         # go through the whole stack and paint the solution
