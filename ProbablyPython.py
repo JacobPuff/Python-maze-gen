@@ -43,24 +43,43 @@ def setNextColor(stackLength, color, inputsReceived):
     elif inputsReceived['solveColor'] == 2:
         colorFade = 255*2/(stackLength * 2)
     elif inputsReceived['solveColor'] == 0:
-        colorFade = (255*5)/(stackLength * 2)
+        colorFade = (255*6)/(stackLength * 2)
 
     if inputsReceived['solveColor'] == 1:
         color[0] += colorFade
         color[2] -= colorFade
 
-    if inputsReceived['solveColor'] == 2 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and math.floor(color[2]) >= 0:
+    if inputsReceived['solveColor'] == 2 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and\
+            math.floor(color[2]) >= 0:
         color[1] += colorFade
         color[2] -= colorFade
-    elif inputsReceived['solveColor'] == 2 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and math.floor(color[1]) >= 0:
+    elif inputsReceived['solveColor'] == 2 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and\
+            math.floor(color[1]) >= 0:
         color[0] += colorFade
         color[1] -= colorFade
-    elif inputsReceived['solveColor'] == 2 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and math.floor(color[0]) >= 0:
+    elif inputsReceived['solveColor'] == 2 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and\
+            math.floor(color[0]) >= 0:
         color[2] += colorFade
         color[0] -= colorFade
 
-    if inputsReceived['solveColor'] == 0:
-        return
+    if inputsReceived['solveColor'] == 0 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and\
+            math.floor(color[2]) >= 255:
+        color[1] += colorFade
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[0]) <= 0 and math.floor(color[1]) >= 255 and\
+            math.floor(color[2]) >= 0:
+        color[2] -= colorFade
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and\
+            math.floor(color[1]) >= 255:
+        color[0] += colorFade
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[2]) <= 0 and math.floor(color[0]) >= 255 and\
+            math.floor(color[1]) >= 0:
+        color[1] -= colorFade
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and\
+            math.floor(color[0]) >= 255:
+        color[2] += colorFade
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) >= 255 and \
+             math.floor(color[0]) >= 0:
+        color[0] -= colorFade
     # print("colorStorage: " + str(colorStorage))
     # print("colorCount: " + str(colorCount))
     return color
@@ -202,7 +221,7 @@ def getInputs():
                         default=None, type=int)
     parser.add_argument("--isGif", help="sets if maze should be saved as gif", default=False, action='store_true')
     args = parser.parse_args()
-    if args.shouldSolve and not args.solveColor:
+    if args.shouldSolve and args.solveColor is None:
         parser.error('need --solveColor when using --shouldSolve')
     if args.solveColor and not args.shouldSolve:
         parser.error('cant use --solveColor when shouldSolve == False')
