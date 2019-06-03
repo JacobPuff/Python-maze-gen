@@ -12,6 +12,12 @@ GREEN = (0,255,0,255)
 BLUE = (0,0,255,255)
 
 
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
 def save(image, gifStore, inputsReceived, scale):
     if inputsReceived['isGif']:
         # these two lines just break things. Goddamnit.
@@ -85,9 +91,11 @@ def setNextColor(stackLength, color, inputsReceived):
     return color
 
 
-def generateMazeSolution(stats, img, solvePosX, solvePosY, stack, scale, gifStore):
+def generateMazeSolution(stats, img, coordinates, stack, scale, gifStore):
     solvingMaze = True
     colorStorage = [0,0,255,255]
+    solvePosX = coordinates['pos'].x
+    solvePosY = coordinates['pos'].y
     img[solvePosX, solvePosY] = BLUE
     leSolvedStack = stack.copy()
     # it already starts with one filled in, and ends with one that it doesn't move to,
@@ -98,7 +106,7 @@ def generateMazeSolution(stats, img, solvePosX, solvePosY, stack, scale, gifStor
         # go through the whole stack and paint the solution
         # then make the rest of the maze from the regular stack afterwards.
         # print("SOLVING: " + str(stats['solveCount']))
-        if solvePosX == 1 and solvePosY == 1:
+        if solvePosX == coordinates['entrancePos'].x and solvePosY == coordinates['entrancePos'].y:
             print("ending maze solving")
             solvingMaze = False
         else:
@@ -136,69 +144,122 @@ def generateMazeSolution(stats, img, solvePosX, solvePosY, stack, scale, gifStor
     return img
 
 
+def setEntranceExit(image, coordinates, inputsReceived):
+    side = math.floor(random.random() * (4 - 0.01))
+    entrancePath = Point(0,0)
+    exitPath = Point(0,0)
+    if side == 0:
+        # MUST FIGURE OUT HOW TO GET ONLY CORNERS
+        entrancePath.x = -1
+        exitPath.x = 1
+        coordinates['entrancePos'].x = 1
+        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
+        coordinates['exitPos'].x = inputsReceived['sizeY'] - 2
+        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
+    if side == 1:
+        entrancePath.x = 1
+        exitPath.x = -1
+        coordinates['entrancePos'].x = inputsReceived['sizeX'] - 2
+        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
+        coordinates['exitPos'].x = 1
+        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
+    if side == 2:
+        entrancePath.y = -1
+        exitPath.y = 1
+        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
+        coordinates['entrancePos'].y = 1
+        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
+        coordinates['exitPos'].y = inputsReceived['sizeY'] - 2
+    if side == 3:
+        entrancePath.y = 1
+        exitPath.y = -1
+        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
+        coordinates['entrancePos'].y = inputsReceived['sizeY'] - 2
+        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
+        coordinates['exitPos'].y = 1
+
+    if inputsReceived['shouldSolve']:
+        if inputsReceived['solveColor'] == 0:
+            image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = BLUE
+        else:
+            image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = RED
+        image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
+    else:
+        image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = WHITE
+        image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = WHITE
+    coordinates['pos'].x = coordinates['entrancePos'].x
+    coordinates['pos'].y = coordinates['entrancePos'].y
+    image[coordinates['pos'].x, coordinates['pos'].y] = WHITE
+    print("side " + str(side))
+    return image
+
+
 def generateMaze(image, inputsReceived):
     gifStore = []
     leStack = []
     img = image.load()
     scale = 3
     stats = {'count': 0, 'solveCount': 0, 'colorCount': 0, 'leSavedStack': 0}
+    coordinates = {'pos': Point(1,1), 'entrancePos': Point(1,1),
+                   'exitPos': Point(inputsReceived['sizeX']-2,inputsReceived['sizeY']-2)}
     mazeMade = False
-    posX = 1
-    posY = 1
-    img[posX,posY] = WHITE
+    img = setEntranceExit(img, coordinates, inputsReceived)
     while not mazeMade:
         availableDir = []
 
-        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] and posX == inputsReceived['sizeX'] - 2 and posY == inputsReceived['sizeY'] - 2:
+        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] and coordinates['pos'].x == coordinates['exitPos'].x and coordinates['pos'].y == coordinates['exitPos'].y:
             # computer starts at 0, so size is already + 1
-            print("Solving maze starts now " + str(posX) + "," + str(posY) + "," + str(inputsReceived['sizeX'] - 2) + "," + str(inputsReceived['sizeY'] - 2))
-            img = generateMazeSolution(stats, img, posX, posY, leStack, scale, gifStore)
+            # DEVNOTE
+            print("Solving maze starts now " + str(coordinates['pos'].x) + "," + str(coordinates['pos'].y) + "," + str(inputsReceived['sizeX'] - 2) + "," + str(inputsReceived['sizeY'] - 2))
+            img = generateMazeSolution(stats, img, coordinates, leStack, scale, gifStore)
 
         # Dont want to have them right next to other sections. So move by 2
-        if posX - 2 > 0 and img[posX - 2, posY] == BLACK:
+        if coordinates['pos'].x - 2 > 0 and img[coordinates['pos'].x - 2, coordinates['pos'].y] == BLACK:
             availableDir.append(0)
-        if posX + 2 < inputsReceived['sizeX'] and img[posX + 2, posY] == BLACK:
+        if coordinates['pos'].x + 2 < inputsReceived['sizeX'] and img[coordinates['pos'].x + 2, coordinates['pos'].y] == BLACK:
             availableDir.append(1)
-        if posY - 2 > 0 and img[posX, posY - 2] == BLACK:
+        if coordinates['pos'].y - 2 > 0 and img[coordinates['pos'].x, coordinates['pos'].y - 2] == BLACK:
             availableDir.append(2)
-        if posY + 2 < inputsReceived['sizeY'] and img[posX, posY + 2] == BLACK:
+        if coordinates['pos'].y + 2 < inputsReceived['sizeY'] and img[coordinates['pos'].x, coordinates['pos'].y + 2] == BLACK:
             availableDir.append(3)
 
         if len(availableDir) > 0:
             # print(count)
             stats['count'] += 1
-            leStack.append((posX,posY))
+            leStack.append((coordinates['pos'].x,coordinates['pos'].y))
             randomDir = math.floor(random.random() * (len(availableDir) - 0.01))
             chosenDir = availableDir[randomDir]
 
             if chosenDir == 0:
-                img[posX-1, posY] = WHITE
-                img[posX-2, posY] = WHITE
-                posX -= 2
+                img[coordinates['pos'].x-1, coordinates['pos'].y] = WHITE
+                img[coordinates['pos'].x-2, coordinates['pos'].y] = WHITE
+                coordinates['pos'].x -= 2
 
             if chosenDir == 1:
-                img[posX+1, posY] = WHITE
-                img[posX+2, posY] = WHITE
-                posX += 2
+                img[coordinates['pos'].x+1, coordinates['pos'].y] = WHITE
+                img[coordinates['pos'].x+2, coordinates['pos'].y] = WHITE
+                coordinates['pos'].x += 2
 
             if chosenDir == 2:
-                img[posX, posY-1] = WHITE
-                img[posX, posY-2] = WHITE
-                posY -= 2
+                img[coordinates['pos'].x, coordinates['pos'].y-1] = WHITE
+                img[coordinates['pos'].x, coordinates['pos'].y-2] = WHITE
+                coordinates['pos'].y -= 2
 
             if chosenDir == 3:
-                img[posX, posY+1] = WHITE
-                img[posX, posY+2] = WHITE
-                posY += 2
+                img[coordinates['pos'].x, coordinates['pos'].y+1] = WHITE
+                img[coordinates['pos'].x, coordinates['pos'].y+2] = WHITE
+                coordinates['pos'].y += 2
 
             saveGifFrame(inputsReceived, scale, gifStore)
 
-        elif posX == 1 and posY == 1:
+        elif coordinates['pos'].x == coordinates['entrancePos'].x and coordinates['pos'].y == coordinates['entrancePos'].y:
+            print(coordinates['exitPos'].x)
+            print(coordinates['exitPos'].y)
             mazeMade = True
         else:
             positions = leStack.pop(len(leStack)-1)
-            posX = positions[0]
-            posY = positions[1]
+            coordinates['pos'].x = positions[0]
+            coordinates['pos'].y = positions[1]
     printStats(stats)
     save(image, gifStore, inputsReceived, scale)
 
