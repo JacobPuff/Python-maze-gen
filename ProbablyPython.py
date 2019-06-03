@@ -10,6 +10,9 @@ BLACK = (0,0,0,255)
 RED = (255,0,0,255)
 GREEN = (0,255,0,255)
 BLUE = (0,0,255,255)
+ACCOUNT_FOR_MIDDLE_BLOCKS = 2
+SIZE_OFFSET = 2
+RANDOM_OFFSET = 0.01
 
 
 class Point:
@@ -42,7 +45,7 @@ def saveGifFrame(inputsReceived, scale, gifStore):
         gifStore.append(frame)
 
 
-def setNextColor(stackLength, color, inputsReceived):
+def setNextColor(stackLength, color, randomColor, inputsReceived):
     colorFade = 0
     if inputsReceived['solveColor'] == 1:
         colorFade = 255/(stackLength * 2)
@@ -50,6 +53,21 @@ def setNextColor(stackLength, color, inputsReceived):
         colorFade = 255*2/(stackLength * 2)
     elif inputsReceived['solveColor'] == 0:
         colorFade = (255*6)/(stackLength * 2)
+    elif inputsReceived['solveColor'] == 3:
+        if color[0] < randomColor[0]:
+            colorFadeR = ((randomColor[0]-color[0])*2)/(stackLength * 2)
+        else:
+            colorFadeR = ((color[0]-randomColor[0])*2)/(stackLength * 2)
+
+        if color[1] < randomColor[1]:
+            colorFadeG = ((randomColor[1]-color[1])*2)/(stackLength * 2)
+        else:
+            colorFadeG = ((color[1]-randomColor[1])*2)/(stackLength * 2)
+
+        if color[2] < randomColor[2]:
+            colorFadeB = ((randomColor[2]-color[2])*2)/(stackLength * 2)
+        else:
+            colorFadeB = ((color[2]-randomColor[2])*2)/(stackLength * 2)
 
     if inputsReceived['solveColor'] == 1:
         color[0] += colorFade
@@ -83,23 +101,34 @@ def setNextColor(stackLength, color, inputsReceived):
     elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and\
             math.floor(color[0]) >= 255:
         color[2] += colorFade
-    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) >= 255 and \
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) >= 255 and\
              math.floor(color[0]) >= 0:
         color[0] -= colorFade
+
+    if inputsReceived['solveColor'] == 3 and math.floor(color[0]) < math.floor(randomColor[0]):
+        color[0] += colorFadeR
+    if inputsReceived['solveColor'] == 3 and math.floor(color[1]) < math.floor(randomColor[1]):
+        color[1] += colorFadeG
+    if inputsReceived['solveColor'] == 3 and math.floor(color[2]) < math.floor(randomColor[2]):
+        color[2] += colorFadeB
+    if inputsReceived['solveColor'] == 3 and math.floor(color[0]) > math.floor(randomColor[0]):
+        color[0] -= colorFadeR
+    if inputsReceived['solveColor'] == 3 and math.floor(color[1]) > math.floor(randomColor[1]):
+        color[1] -= colorFadeG
+    if inputsReceived['solveColor'] == 3 and math.floor(color[2]) > math.floor(randomColor[2]):
+        color[2] -= colorFadeB
+
     # print("colorStorage: " + str(colorStorage))
     # print("colorCount: " + str(colorCount))
     return color
 
 
-def generateMazeSolution(stats, img, coordinates, stack, scale, gifStore):
+def generateMazeSolution(stats, img, coordinates, stack, colorStorage, randomColorStorage, scale, gifStore):
     solvingMaze = True
-    colorStorage = [0,0,255,255]
     solvePosX = coordinates['pos'].x
     solvePosY = coordinates['pos'].y
-    img[solvePosX, solvePosY] = BLUE
+    img[solvePosX, solvePosY] = tuple([x for x in colorStorage])
     leSolvedStack = stack.copy()
-    # it already starts with one filled in, and ends with one that it doesn't move to,
-    # but we still need that to calculate colorFade.
     stats['leSavedStack'] = len(leSolvedStack)
     while solvingMaze:
         # Once I hit the end, copy the stack, then,
@@ -113,27 +142,27 @@ def generateMazeSolution(stats, img, coordinates, stack, scale, gifStore):
             solvePositions = leSolvedStack.pop()
 
         if solvePositions[0] < solvePosX:
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX - 1, solvePosY] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX - 2, solvePosY] = tuple([math.floor(x) for x in colorStorage])
 
         if solvePositions[0] > solvePosX:
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX + 1, solvePosY] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX + 2, solvePosY] = tuple([math.floor(x) for x in colorStorage])
 
         if solvePositions[1] < solvePosY:
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX, solvePosY - 1] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX, solvePosY - 2] = tuple([math.floor(x) for x in colorStorage])
 
         if solvePositions[1] > solvePosY:
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX, solvePosY + 1] = tuple([math.floor(x) for x in colorStorage])
-            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, inputsReceived)
+            colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
             img[solvePosX, solvePosY + 2] = tuple([math.floor(x) for x in colorStorage])
 
         stats['colorCount'] += 2
@@ -144,46 +173,49 @@ def generateMazeSolution(stats, img, coordinates, stack, scale, gifStore):
     return img
 
 
-def setEntranceExit(image, coordinates, inputsReceived):
-    side = math.floor(random.random() * (4 - 0.01))
+def setEntranceExit(image, coordinates, colorStorage, randomColorStorage, inputsReceived):
+    side = math.floor(random.random() * (4 - RANDOM_OFFSET))
     entrancePath = Point(0,0)
     exitPath = Point(0,0)
     if side == 0:
-        # MUST FIGURE OUT HOW TO GET ONLY CORNERS
         entrancePath.x = -1
         exitPath.x = 1
         coordinates['entrancePos'].x = 1
-        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
-        coordinates['exitPos'].x = inputsReceived['sizeY'] - 2
-        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
+        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        coordinates['exitPos'].x = inputsReceived['sizeY'] - SIZE_OFFSET
+        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
     if side == 1:
         entrancePath.x = 1
         exitPath.x = -1
-        coordinates['entrancePos'].x = inputsReceived['sizeX'] - 2
-        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
+        coordinates['entrancePos'].x = inputsReceived['sizeX'] - SIZE_OFFSET
+        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
         coordinates['exitPos'].x = 1
-        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - 2.01)/2))*2 + 1
+        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
     if side == 2:
         entrancePath.y = -1
         exitPath.y = 1
-        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
+        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
         coordinates['entrancePos'].y = 1
-        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
-        coordinates['exitPos'].y = inputsReceived['sizeY'] - 2
+        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        coordinates['exitPos'].y = inputsReceived['sizeY'] - SIZE_OFFSET
     if side == 3:
         entrancePath.y = 1
         exitPath.y = -1
-        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
-        coordinates['entrancePos'].y = inputsReceived['sizeY'] - 2
-        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - 2.01)/2))*2 + 1
+        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        coordinates['entrancePos'].y = inputsReceived['sizeY'] - SIZE_OFFSET
+        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
         coordinates['exitPos'].y = 1
 
     if inputsReceived['shouldSolve']:
         if inputsReceived['solveColor'] == 0:
             image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = BLUE
+            image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
+        elif inputsReceived['solveColor'] == 3:
+            image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = tuple([x for x in randomColorStorage])
+            image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = tuple([x for x in colorStorage])
         else:
             image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = RED
-        image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
+            image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
     else:
         image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = WHITE
         image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = WHITE
@@ -203,15 +235,26 @@ def generateMaze(image, inputsReceived):
     coordinates = {'pos': Point(1,1), 'entrancePos': Point(1,1),
                    'exitPos': Point(inputsReceived['sizeX']-2,inputsReceived['sizeY']-2)}
     mazeMade = False
-    img = setEntranceExit(img, coordinates, inputsReceived)
+    colorStorage = [0,0,255,255]
+    randomColorStorage = [0,0,255,255]
+    if inputsReceived['solveColor'] == 3:
+        colorStorage[0] = math.floor(random.random() * ((215-40) - RANDOM_OFFSET)) + 40
+        colorStorage[1] = math.floor(random.random() * ((215-40) - RANDOM_OFFSET)) + 40
+        colorStorage[2] = math.floor(random.random() * ((215-40) - RANDOM_OFFSET)) + 40
+        randomColorStorage[0] = math.floor(random.random() * ((215-40) - RANDOM_OFFSET)) + 40
+        randomColorStorage[1] = math.floor(random.random() * ((215-40) - RANDOM_OFFSET)) + 40
+        randomColorStorage[2] = math.floor(random.random() * ((215-40) - RANDOM_OFFSET)) + 40
+    img = setEntranceExit(img, coordinates, colorStorage, randomColorStorage, inputsReceived)
     while not mazeMade:
         availableDir = []
 
-        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] and coordinates['pos'].x == coordinates['exitPos'].x and coordinates['pos'].y == coordinates['exitPos'].y:
+        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] and\
+                coordinates['pos'].x == coordinates['exitPos'].x and coordinates['pos'].y == coordinates['exitPos'].y:
             # computer starts at 0, so size is already + 1
             # DEVNOTE
-            print("Solving maze starts now " + str(coordinates['pos'].x) + "," + str(coordinates['pos'].y) + "," + str(inputsReceived['sizeX'] - 2) + "," + str(inputsReceived['sizeY'] - 2))
-            img = generateMazeSolution(stats, img, coordinates, leStack, scale, gifStore)
+            print("Solving maze starts now " + str(coordinates['pos'].x) + "," + str(coordinates['pos'].y) + "," +
+                  str(inputsReceived['sizeX'] - SIZE_OFFSET) + "," + str(inputsReceived['sizeY'] - SIZE_OFFSET))
+            img = generateMazeSolution(stats, img, coordinates, leStack, colorStorage, randomColorStorage, scale, gifStore)
 
         # Dont want to have them right next to other sections. So move by 2
         if coordinates['pos'].x - 2 > 0 and img[coordinates['pos'].x - 2, coordinates['pos'].y] == BLACK:
@@ -227,7 +270,7 @@ def generateMaze(image, inputsReceived):
             # print(count)
             stats['count'] += 1
             leStack.append((coordinates['pos'].x,coordinates['pos'].y))
-            randomDir = math.floor(random.random() * (len(availableDir) - 0.01))
+            randomDir = math.floor(random.random() * (len(availableDir) - RANDOM_OFFSET))
             chosenDir = availableDir[randomDir]
 
             if chosenDir == 0:
@@ -278,7 +321,7 @@ def getInputs():
     parser.add_argument("sizeY", help="int, set size on the 'y' axis", type=int)
     parser.add_argument("--shouldSolve", help="sets whether or not to solve the maze, needs solveColor",
                         default=False, action='store_true')
-    parser.add_argument("--solveColor", help="0:rainbow,1:red&blue,2:RGB, sets which colors are used for the solution",
+    parser.add_argument("--solveColor", help="0:rainbow,1:red&blue,2:RGB,3:random, sets which colors are used for the solution",
                         default=None, type=int)
     parser.add_argument("--isGif", help="sets if maze should be saved as gif", default=False, action='store_true')
     args = parser.parse_args()
@@ -286,7 +329,7 @@ def getInputs():
         parser.error('need --solveColor when using --shouldSolve')
     if args.solveColor and not args.shouldSolve:
         parser.error('cant use --solveColor when shouldSolve == False')
-    if args.solveColor and (args.solveColor < 0 or args.solveColor > 2):
+    if args.solveColor and (args.solveColor < 0 or args.solveColor > 3):
         parser.error('--solveColor needs to be between 0 and 2')
     inputsReceived= {'sizeX': args.sizeX, 'sizeY': args.sizeY, 'shouldSolve': args.shouldSolve,
                      'solveColor': args.solveColor, 'isGif': args.isGif}
