@@ -358,7 +358,8 @@ def getInputs():
         parser.error('--solveColor needs to be between 0 and 2')
     inputsReceived= {'sizeX': args.sizeX, 'sizeY': args.sizeY, 'shouldSolve': args.shouldSolve,
                      'solveColor': args.solveColor, 'isGif': args.isGif}
-    # divided by 2, floored, and then multiplied by 2 to make the plus 1 give a border
+    # divided by 2, floored, and then multiplied by 2 to
+    # make the plus 1 give a border so segments cant go on the edge
     # without having to make unnecessary if statements.
     # Much more elegant, for a possibly smaller number.
     inputsReceived['sizeX'] = (math.floor(inputsReceived['sizeX']/2) * 2) + BORDER_OFFSET
