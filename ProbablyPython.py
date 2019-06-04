@@ -10,10 +10,14 @@ BLACK = (0,0,0,255)
 RED = (255,0,0,255)
 GREEN = (0,255,0,255)
 BLUE = (0,0,255,255)
-ACCOUNT_FOR_MIDDLE_BLOCKS = 2
+BORDER_OFFSET = 1
 SIZE_OFFSET = 2
 RANDOM_OFFSET = 0.01
-
+ACCOUNT_FOR_MIDDLE_BLOCKS = 2
+CORRECT_FOR_BLOCKS = 2
+HALLWAY_SEGMENT_LENGTH = 2
+WALL_WIDTH = 1
+MAZE_MIN_SIZE = 5
 
 class Point:
     def __init__(self, x, y):
@@ -48,60 +52,64 @@ def saveGifFrame(inputsReceived, scale, gifStore):
 def setNextColor(stackLength, color, randomColor, inputsReceived):
     colorFade = 0
     if inputsReceived['solveColor'] == 1:
-        colorFade = 255/(stackLength * 2)
+        # fade between 2 colors, but dont loop
+        colorFade = 255/(stackLength * CORRECT_FOR_BLOCKS)
     elif inputsReceived['solveColor'] == 2:
-        colorFade = 255*2/(stackLength * 2)
+        # fade between 3 colors, but dont loop
+        colorFade = 255*2/(stackLength * CORRECT_FOR_BLOCKS)
     elif inputsReceived['solveColor'] == 0:
-        colorFade = (255*6)/(stackLength * 2)
+        # fade between all fully saturated colors, 6 combinations of 255, not including white or black
+        colorFade = (255*6)/(stackLength * CORRECT_FOR_BLOCKS)
     elif inputsReceived['solveColor'] == 3:
+        # account for difference, and fading between two colors
         if color[0] < randomColor[0]:
-            colorFadeR = ((randomColor[0]-color[0])*2)/(stackLength * 2)
+            colorFadeR = (255-(randomColor[0]-color[0]))/(stackLength * CORRECT_FOR_BLOCKS)
         else:
-            colorFadeR = ((color[0]-randomColor[0])*2)/(stackLength * 2)
+            colorFadeR = (255-(color[0]-randomColor[0]))/(stackLength * CORRECT_FOR_BLOCKS)
 
         if color[1] < randomColor[1]:
-            colorFadeG = ((randomColor[1]-color[1])*2)/(stackLength * 2)
+            colorFadeG = (255-(randomColor[1]-color[1]))/(stackLength * CORRECT_FOR_BLOCKS)
         else:
-            colorFadeG = ((color[1]-randomColor[1])*2)/(stackLength * 2)
+            colorFadeG = (255-(color[1]-randomColor[1]))/(stackLength * CORRECT_FOR_BLOCKS)
 
         if color[2] < randomColor[2]:
-            colorFadeB = ((randomColor[2]-color[2])*2)/(stackLength * 2)
+            colorFadeB = (255-(randomColor[2]-color[2]))/(stackLength * CORRECT_FOR_BLOCKS)
         else:
-            colorFadeB = ((color[2]-randomColor[2])*2)/(stackLength * 2)
+            colorFadeB = (255-(color[2]-randomColor[2]))/(stackLength * CORRECT_FOR_BLOCKS)
 
     if inputsReceived['solveColor'] == 1:
         color[0] += colorFade
         color[2] -= colorFade
 
-    if inputsReceived['solveColor'] == 2 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and\
+    if inputsReceived['solveColor'] == 2 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and \
             math.floor(color[2]) >= 0:
         color[1] += colorFade
         color[2] -= colorFade
-    elif inputsReceived['solveColor'] == 2 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and\
+    elif inputsReceived['solveColor'] == 2 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and \
             math.floor(color[1]) >= 0:
         color[0] += colorFade
         color[1] -= colorFade
-    elif inputsReceived['solveColor'] == 2 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and\
+    elif inputsReceived['solveColor'] == 2 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and \
             math.floor(color[0]) >= 0:
         color[2] += colorFade
         color[0] -= colorFade
 
-    if inputsReceived['solveColor'] == 0 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and\
+    if inputsReceived['solveColor'] == 0 and math.floor(color[0]) <= 0 and math.floor(color[1]) <= 255 and \
             math.floor(color[2]) >= 255:
         color[1] += colorFade
-    elif inputsReceived['solveColor'] == 0 and math.floor(color[0]) <= 0 and math.floor(color[1]) >= 255 and\
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[0]) <= 0 and math.floor(color[1]) >= 255 and \
             math.floor(color[2]) >= 0:
         color[2] -= colorFade
-    elif inputsReceived['solveColor'] == 0 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and\
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[2]) <= 0 and math.floor(color[0]) <= 255 and \
             math.floor(color[1]) >= 255:
         color[0] += colorFade
-    elif inputsReceived['solveColor'] == 0 and math.floor(color[2]) <= 0 and math.floor(color[0]) >= 255 and\
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[2]) <= 0 and math.floor(color[0]) >= 255 and \
             math.floor(color[1]) >= 0:
         color[1] -= colorFade
-    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and\
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) <= 255 and \
             math.floor(color[0]) >= 255:
         color[2] += colorFade
-    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) >= 255 and\
+    elif inputsReceived['solveColor'] == 0 and math.floor(color[1]) <= 0 and math.floor(color[2]) >= 255 and \
              math.floor(color[0]) >= 0:
         color[0] -= colorFade
 
@@ -143,29 +151,29 @@ def generateMazeSolution(stats, img, coordinates, stack, colorStorage, randomCol
 
         if solvePositions[0] < solvePosX:
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX - 1, solvePosY] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX - WALL_WIDTH, solvePosY] = tuple([math.floor(x) for x in colorStorage])
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX - 2, solvePosY] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX - HALLWAY_SEGMENT_LENGTH, solvePosY] = tuple([math.floor(x) for x in colorStorage])
 
         if solvePositions[0] > solvePosX:
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX + 1, solvePosY] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX + WALL_WIDTH, solvePosY] = tuple([math.floor(x) for x in colorStorage])
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX + 2, solvePosY] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX + HALLWAY_SEGMENT_LENGTH, solvePosY] = tuple([math.floor(x) for x in colorStorage])
 
         if solvePositions[1] < solvePosY:
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX, solvePosY - 1] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX, solvePosY - WALL_WIDTH] = tuple([math.floor(x) for x in colorStorage])
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX, solvePosY - 2] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX, solvePosY - HALLWAY_SEGMENT_LENGTH] = tuple([math.floor(x) for x in colorStorage])
 
         if solvePositions[1] > solvePosY:
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX, solvePosY + 1] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX, solvePosY + WALL_WIDTH] = tuple([math.floor(x) for x in colorStorage])
             colorStorage = setNextColor(stats['leSavedStack'], colorStorage, randomColorStorage, inputsReceived)
-            img[solvePosX, solvePosY + 2] = tuple([math.floor(x) for x in colorStorage])
+            img[solvePosX, solvePosY + HALLWAY_SEGMENT_LENGTH] = tuple([math.floor(x) for x in colorStorage])
 
-        stats['colorCount'] += 2
+        stats['colorCount'] += CORRECT_FOR_BLOCKS
         solvePosX = solvePositions[0]
         solvePosY = solvePositions[1]
         saveGifFrame(inputsReceived, scale, gifStore)
@@ -178,33 +186,44 @@ def setEntranceExit(image, coordinates, colorStorage, randomColorStorage, inputs
     entrancePath = Point(0,0)
     exitPath = Point(0,0)
     if side == 0:
-        entrancePath.x = -1
-        exitPath.x = 1
-        coordinates['entrancePos'].x = 1
-        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        entrancePath.x = -BORDER_OFFSET
+        exitPath.x = BORDER_OFFSET
+        coordinates['entrancePos'].x = BORDER_OFFSET
+        coordinates['entrancePos'].y = math.floor(random.random() *
+                                                  ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                                   / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
         coordinates['exitPos'].x = inputsReceived['sizeY'] - SIZE_OFFSET
-        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        coordinates['exitPos'].y = math.floor(random.random() *
+                                              ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                               / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
     if side == 1:
-        entrancePath.x = 1
-        exitPath.x = -1
+        entrancePath.x = BORDER_OFFSET
+        exitPath.x = -BORDER_OFFSET
         coordinates['entrancePos'].x = inputsReceived['sizeX'] - SIZE_OFFSET
-        coordinates['entrancePos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
-        coordinates['exitPos'].x = 1
-        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        coordinates['entrancePos'].y = math.floor(random.random() *
+                                                  ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                                   / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
+        coordinates['exitPos'].x = BORDER_OFFSET
+        coordinates['exitPos'].y = math.floor(random.random() * ((inputsReceived['sizeY'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                                                 / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
     if side == 2:
-        entrancePath.y = -1
-        exitPath.y = 1
-        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
-        coordinates['entrancePos'].y = 1
-        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        entrancePath.y = -BORDER_OFFSET
+        exitPath.y = BORDER_OFFSET
+        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                                                     / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
+        coordinates['entrancePos'].y = BORDER_OFFSET
+        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                                                 / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
         coordinates['exitPos'].y = inputsReceived['sizeY'] - SIZE_OFFSET
     if side == 3:
-        entrancePath.y = 1
-        exitPath.y = -1
-        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
+        entrancePath.y = BORDER_OFFSET
+        exitPath.y = -BORDER_OFFSET
+        coordinates['entrancePos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                                                     / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
         coordinates['entrancePos'].y = inputsReceived['sizeY'] - SIZE_OFFSET
-        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)/2))*2 + 1
-        coordinates['exitPos'].y = 1
+        coordinates['exitPos'].x = math.floor(random.random() * ((inputsReceived['sizeX'] - SIZE_OFFSET - RANDOM_OFFSET)
+                                                                 / CORRECT_FOR_BLOCKS))*CORRECT_FOR_BLOCKS + BORDER_OFFSET
+        coordinates['exitPos'].y = BORDER_OFFSET
 
     if inputsReceived['shouldSolve']:
         if inputsReceived['solveColor'] == 0:
@@ -233,7 +252,7 @@ def generateMaze(image, inputsReceived):
     scale = 3
     stats = {'count': 0, 'solveCount': 0, 'colorCount': 0, 'leSavedStack': 0}
     coordinates = {'pos': Point(1,1), 'entrancePos': Point(1,1),
-                   'exitPos': Point(inputsReceived['sizeX']-2,inputsReceived['sizeY']-2)}
+                   'exitPos': Point(inputsReceived['sizeX']-SIZE_OFFSET,inputsReceived['sizeY']-SIZE_OFFSET)}
     mazeMade = False
     colorStorage = [0,0,255,255]
     randomColorStorage = [0,0,255,255]
@@ -248,21 +267,28 @@ def generateMaze(image, inputsReceived):
     while not mazeMade:
         availableDir = []
 
-        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] and\
+        if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] and \
                 coordinates['pos'].x == coordinates['exitPos'].x and coordinates['pos'].y == coordinates['exitPos'].y:
             # computer starts at 0, so size is already + 1
             # print("Solving maze starts now " + str(coordinates['pos'].x) + "," + str(coordinates['pos'].y) + "," +
-                  # str(inputsReceived['sizeX'] - SIZE_OFFSET) + "," + str(inputsReceived['sizeY'] - SIZE_OFFSET))
-            img = generateMazeSolution(stats, img, coordinates, leStack, colorStorage, randomColorStorage, scale, gifStore)
+            #       str(inputsReceived['sizeX'] - SIZE_OFFSET) + "," + str(inputsReceived['sizeY'] - SIZE_OFFSET))
 
-        # Dont want to have them right next to other sections. So move by 2
-        if coordinates['pos'].x - 2 > 0 and img[coordinates['pos'].x - 2, coordinates['pos'].y] == BLACK:
+            img = generateMazeSolution(stats, img, coordinates, leStack,
+                                       colorStorage, randomColorStorage, scale, gifStore)
+
+        # Dont want to have sections right next to other sections. So move by 2
+        if coordinates['pos'].x - HALLWAY_SEGMENT_LENGTH > 0 and \
+                img[coordinates['pos'].x - HALLWAY_SEGMENT_LENGTH, coordinates['pos'].y] == BLACK:
             availableDir.append(0)
-        if coordinates['pos'].x + 2 < inputsReceived['sizeX'] and img[coordinates['pos'].x + 2, coordinates['pos'].y] == BLACK:
+        if coordinates['pos'].x + HALLWAY_SEGMENT_LENGTH < inputsReceived['sizeX'] and \
+                img[coordinates['pos'].x + HALLWAY_SEGMENT_LENGTH,
+                                                                      coordinates['pos'].y] == BLACK:
             availableDir.append(1)
-        if coordinates['pos'].y - 2 > 0 and img[coordinates['pos'].x, coordinates['pos'].y - 2] == BLACK:
+        if coordinates['pos'].y - HALLWAY_SEGMENT_LENGTH > 0 and \
+                img[coordinates['pos'].x, coordinates['pos'].y - HALLWAY_SEGMENT_LENGTH] == BLACK:
             availableDir.append(2)
-        if coordinates['pos'].y + 2 < inputsReceived['sizeY'] and img[coordinates['pos'].x, coordinates['pos'].y + 2] == BLACK:
+        if coordinates['pos'].y + HALLWAY_SEGMENT_LENGTH < inputsReceived['sizeY'] and \
+                img[coordinates['pos'].x, coordinates['pos'].y + HALLWAY_SEGMENT_LENGTH] == BLACK:
             availableDir.append(3)
 
         if len(availableDir) > 0:
@@ -273,24 +299,24 @@ def generateMaze(image, inputsReceived):
             chosenDir = availableDir[randomDir]
 
             if chosenDir == 0:
-                img[coordinates['pos'].x-1, coordinates['pos'].y] = WHITE
-                img[coordinates['pos'].x-2, coordinates['pos'].y] = WHITE
-                coordinates['pos'].x -= 2
+                img[coordinates['pos'].x-WALL_WIDTH, coordinates['pos'].y] = WHITE
+                img[coordinates['pos'].x-HALLWAY_SEGMENT_LENGTH, coordinates['pos'].y] = WHITE
+                coordinates['pos'].x -= HALLWAY_SEGMENT_LENGTH
 
             if chosenDir == 1:
-                img[coordinates['pos'].x+1, coordinates['pos'].y] = WHITE
-                img[coordinates['pos'].x+2, coordinates['pos'].y] = WHITE
-                coordinates['pos'].x += 2
+                img[coordinates['pos'].x+WALL_WIDTH, coordinates['pos'].y] = WHITE
+                img[coordinates['pos'].x+HALLWAY_SEGMENT_LENGTH, coordinates['pos'].y] = WHITE
+                coordinates['pos'].x += HALLWAY_SEGMENT_LENGTH
 
             if chosenDir == 2:
-                img[coordinates['pos'].x, coordinates['pos'].y-1] = WHITE
-                img[coordinates['pos'].x, coordinates['pos'].y-2] = WHITE
-                coordinates['pos'].y -= 2
+                img[coordinates['pos'].x, coordinates['pos'].y-WALL_WIDTH] = WHITE
+                img[coordinates['pos'].x, coordinates['pos'].y-HALLWAY_SEGMENT_LENGTH] = WHITE
+                coordinates['pos'].y -= HALLWAY_SEGMENT_LENGTH
 
             if chosenDir == 3:
-                img[coordinates['pos'].x, coordinates['pos'].y+1] = WHITE
-                img[coordinates['pos'].x, coordinates['pos'].y+2] = WHITE
-                coordinates['pos'].y += 2
+                img[coordinates['pos'].x, coordinates['pos'].y+WALL_WIDTH] = WHITE
+                img[coordinates['pos'].x, coordinates['pos'].y+HALLWAY_SEGMENT_LENGTH] = WHITE
+                coordinates['pos'].y += HALLWAY_SEGMENT_LENGTH
 
             saveGifFrame(inputsReceived, scale, gifStore)
 
@@ -335,13 +361,13 @@ def getInputs():
     # divided by 2, floored, and then multiplied by 2 to make the plus 1 give a border
     # without having to make unnecessary if statements.
     # Much more elegant, for a possibly smaller number.
-    inputsReceived['sizeX'] = (math.floor(inputsReceived['sizeX']/2) * 2) + 1
-    inputsReceived['sizeY'] = (math.floor(inputsReceived['sizeY']/2) * 2) + 1
+    inputsReceived['sizeX'] = (math.floor(inputsReceived['sizeX']/2) * 2) + BORDER_OFFSET
+    inputsReceived['sizeY'] = (math.floor(inputsReceived['sizeY']/2) * 2) + BORDER_OFFSET
 
-    if inputsReceived['sizeX'] < 5:
-        inputsReceived['sizeX'] = 5
-    if inputsReceived['sizeY'] < 5:
-        inputsReceived['sizeY'] = 5
+    if inputsReceived['sizeX'] < MAZE_MIN_SIZE:
+        inputsReceived['sizeX'] = MAZE_MIN_SIZE
+    if inputsReceived['sizeY'] < MAZE_MIN_SIZE:
+        inputsReceived['sizeY'] = MAZE_MIN_SIZE
     return inputsReceived
 
 
