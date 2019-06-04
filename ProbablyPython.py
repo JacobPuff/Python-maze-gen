@@ -133,7 +133,7 @@ def generateMazeSolution(stats, img, coordinates, stack, colorStorage, randomCol
     while solvingMaze:
         # Once I hit the end, copy the stack, then,
         # go through the whole stack and paint the solution
-        # then make the rest of the maze from the regular stack afterwards.
+        # then make the rest of the maze from the regular stack afterwards
         # print("SOLVING: " + str(stats['solveCount']))
         if solvePosX == coordinates['entrancePos'].x and solvePosY == coordinates['entrancePos'].y:
             print("ending maze solving")
@@ -222,7 +222,7 @@ def setEntranceExit(image, coordinates, colorStorage, randomColorStorage, inputs
     coordinates['pos'].x = coordinates['entrancePos'].x
     coordinates['pos'].y = coordinates['entrancePos'].y
     image[coordinates['pos'].x, coordinates['pos'].y] = WHITE
-    print("side " + str(side))
+    # print("side " + str(side))
     return image
 
 
@@ -251,9 +251,8 @@ def generateMaze(image, inputsReceived):
         if stats['solveCount'] == 0 and inputsReceived['shouldSolve'] and\
                 coordinates['pos'].x == coordinates['exitPos'].x and coordinates['pos'].y == coordinates['exitPos'].y:
             # computer starts at 0, so size is already + 1
-            # DEVNOTE
-            print("Solving maze starts now " + str(coordinates['pos'].x) + "," + str(coordinates['pos'].y) + "," +
-                  str(inputsReceived['sizeX'] - SIZE_OFFSET) + "," + str(inputsReceived['sizeY'] - SIZE_OFFSET))
+            # print("Solving maze starts now " + str(coordinates['pos'].x) + "," + str(coordinates['pos'].y) + "," +
+                  # str(inputsReceived['sizeX'] - SIZE_OFFSET) + "," + str(inputsReceived['sizeY'] - SIZE_OFFSET))
             img = generateMazeSolution(stats, img, coordinates, leStack, colorStorage, randomColorStorage, scale, gifStore)
 
         # Dont want to have them right next to other sections. So move by 2
@@ -296,8 +295,8 @@ def generateMaze(image, inputsReceived):
             saveGifFrame(inputsReceived, scale, gifStore)
 
         elif coordinates['pos'].x == coordinates['entrancePos'].x and coordinates['pos'].y == coordinates['entrancePos'].y:
-            print(coordinates['exitPos'].x)
-            print(coordinates['exitPos'].y)
+            # print(coordinates['exitPos'].x)
+            # print(coordinates['exitPos'].y)
             mazeMade = True
         else:
             positions = leStack.pop(len(leStack)-1)
