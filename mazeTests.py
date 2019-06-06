@@ -9,9 +9,6 @@ class mazeUnitTests(unittest.TestCase):
         color = ProbablyPython.setNextColor(1, color, [0,0,0,255], inputs)
         self.assertEqual([255,0,0,255], color)
 
-    def test_test(self):
-        self.assertEqual(True, True)
-
 class mazeIntegrationTests(unittest.TestCase):
     def test_mazeGen(self):
         data = {"sizeX": 51, "sizeY": 51, "shouldSolve": None, "solveColor": None, "isGif": None}
