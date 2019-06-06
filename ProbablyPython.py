@@ -40,9 +40,9 @@ def save(image, gifStore, inputsReceived, scale):
         image.save("ermahgerd.png", "PNG")
 
 
-def saveGifFrame(inputsReceived, scale, gifStore):
+def saveGifFrame(image, inputsReceived, scale, gifStore):
     if inputsReceived['isGif']:
-        frame = myimage.copy()
+        frame = image.copy()
         frame.resize(
             (inputsReceived['sizeX'] * scale, inputsReceived['sizeY'] * scale),
             Image.NEAREST)
@@ -131,7 +131,7 @@ def setNextColor(stackLength, color, randomColor, inputsReceived):
     return color
 
 
-def generateMazeSolution(stats, img, coordinates, stack, colorStorage, randomColorStorage, scale, gifStore):
+def generateMazeSolution(myimage, stats, img, coordinates, stack, colorStorage, randomColorStorage, scale, inputsReceived, gifStore):
     solvingMaze = True
     solvePosX = coordinates['pos'].x
     solvePosY = coordinates['pos'].y
@@ -176,12 +176,12 @@ def generateMazeSolution(stats, img, coordinates, stack, colorStorage, randomCol
         stats['colorCount'] += CORRECT_FOR_BLOCKS
         solvePosX = solvePositions[0]
         solvePosY = solvePositions[1]
-        saveGifFrame(inputsReceived, scale, gifStore)
+        saveGifFrame(myimage, inputsReceived, scale, gifStore)
         stats['solveCount'] += 1
     return img
 
 
-def setEntranceExit(image, coordinates, colorStorage, randomColorStorage, inputsReceived):
+def setEntranceExit(img, coordinates, colorStorage, randomColorStorage, inputsReceived):
     side = math.floor(random.random() * (4 - RANDOM_OFFSET))
     entrancePath = Point(0,0)
     exitPath = Point(0,0)
@@ -227,28 +227,29 @@ def setEntranceExit(image, coordinates, colorStorage, randomColorStorage, inputs
 
     if inputsReceived['shouldSolve']:
         if inputsReceived['solveColor'] == 0:
-            image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = BLUE
-            image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
+            img[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = BLUE
+            img[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
         elif inputsReceived['solveColor'] == 3:
-            image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = tuple([x for x in randomColorStorage])
-            image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = tuple([x for x in colorStorage])
+            img[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = tuple([x for x in randomColorStorage])
+            img[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = tuple([x for x in colorStorage])
         else:
-            image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = RED
-            image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
+            img[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = RED
+            img[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = BLUE
     else:
-        image[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = WHITE
-        image[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = WHITE
+        img[coordinates['entrancePos'].x + entrancePath.x, coordinates['entrancePos'].y + entrancePath.y] = WHITE
+        img[coordinates['exitPos'].x + exitPath.x, coordinates['exitPos'].y + exitPath.y] = WHITE
     coordinates['pos'].x = coordinates['entrancePos'].x
     coordinates['pos'].y = coordinates['entrancePos'].y
-    image[coordinates['pos'].x, coordinates['pos'].y] = WHITE
+    img[coordinates['pos'].x, coordinates['pos'].y] = WHITE
     # print("side " + str(side))
-    return image
+    return img
 
 
-def generateMaze(image, inputsReceived):
+def generateMaze(inputsReceived):
     gifStore = []
     leStack = []
-    img = image.load()
+    myimage = Image.new('RGBA', (inputsReceived['sizeX'],inputsReceived['sizeY']), color=BLACK)
+    img = myimage.load()
     scale = 3
     stats = {'count': 0, 'solveCount': 0, 'colorCount': 0, 'leSavedStack': 0}
     coordinates = {'pos': Point(1,1), 'entrancePos': Point(1,1),
@@ -273,8 +274,8 @@ def generateMaze(image, inputsReceived):
             # print("Solving maze starts now " + str(coordinates['pos'].x) + "," + str(coordinates['pos'].y) + "," +
             #       str(inputsReceived['sizeX'] - SIZE_OFFSET) + "," + str(inputsReceived['sizeY'] - SIZE_OFFSET))
 
-            img = generateMazeSolution(stats, img, coordinates, leStack,
-                                       colorStorage, randomColorStorage, scale, gifStore)
+            img = generateMazeSolution(myimage, stats, img, coordinates, leStack,
+                                       colorStorage, randomColorStorage, scale, inputsReceived, gifStore)
 
         # Dont want to have sections right next to other sections. So move by 2
         if coordinates['pos'].x - HALLWAY_SEGMENT_LENGTH > 0 and \
@@ -318,7 +319,7 @@ def generateMaze(image, inputsReceived):
                 img[coordinates['pos'].x, coordinates['pos'].y+HALLWAY_SEGMENT_LENGTH] = WHITE
                 coordinates['pos'].y += HALLWAY_SEGMENT_LENGTH
 
-            saveGifFrame(inputsReceived, scale, gifStore)
+            saveGifFrame(myimage, inputsReceived, scale, gifStore)
 
         elif coordinates['pos'].x == coordinates['entrancePos'].x and coordinates['pos'].y == coordinates['entrancePos'].y:
             # print(coordinates['exitPos'].x)
@@ -329,7 +330,8 @@ def generateMaze(image, inputsReceived):
             coordinates['pos'].x = positions[0]
             coordinates['pos'].y = positions[1]
     printStats(stats)
-    save(image, gifStore, inputsReceived, scale)
+    save(myimage, gifStore, inputsReceived, scale)
+    return myimage
 
 
 def printStats(stats):
@@ -374,5 +376,4 @@ def getInputs():
 
 if __name__ == "__main__":
     inputsReceived = getInputs()
-    myimage = Image.new('RGBA', (inputsReceived['sizeX'],inputsReceived['sizeY']), color=BLACK)
-    generateMaze(myimage, inputsReceived)
+    generateMaze(inputsReceived)
