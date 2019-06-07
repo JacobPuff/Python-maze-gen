@@ -12,7 +12,7 @@ class mazeUnitTests(unittest.TestCase):
 
     def test_setEntranceExit(self):
         point = ProbablyPython.Point
-        inputs = {"sizeX": 50, "sizeY": 50, "shouldSolve": None, "solveColor": 1, "isGif": None}
+        inputs = {"sizeX": 51, "sizeY": 51, "shouldSolve": None, "solveColor": 1, "isGif": None}
         myimage = Image.new('RGBA', (inputs['sizeX'],inputs['sizeY']), color=(0,0,0,255))
         img = myimage.load()
         coordinates = {'pos': point(1, 1), 'entrancePos': point(1, 1),
@@ -35,7 +35,6 @@ class mazeIntegrationTests(unittest.TestCase):
                 if x % 2 != 0 and y % 2 != 0:
                     testArray.append(img[x, y])
                     self.assertEqual(img[x, y], (255, 255, 255, 255))
-
 
     def test_mazeGenWithSolution(self):
         inputsRecieved = {"sizeX": 51, "sizeY": 51, "shouldSolve": True, "solveColor": 1, "isGif": None}

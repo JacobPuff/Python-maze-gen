@@ -21,6 +21,8 @@ MAZE_MIN_SIZE = 5
 
 class Point:
     def __init__(self, x, y):
+        if isinstance(x, str) or isinstance(y, str):
+            raise Exception("Can not pass type string to class Point")
         self.x = x
         self.y = y
 
