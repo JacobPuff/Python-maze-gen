@@ -1,4 +1,5 @@
 import unittest
+from PIL import Image
 import ProbablyPython
 
 class mazeUnitTests(unittest.TestCase):
@@ -8,6 +9,20 @@ class mazeUnitTests(unittest.TestCase):
         color = ProbablyPython.setNextColor(1, [0,0,255,255], [0,0,0,255], inputs)
         color = ProbablyPython.setNextColor(1, color, [0,0,0,255], inputs)
         self.assertEqual([255,0,0,255], color)
+
+    def test_setEntranceExit(self):
+        point = ProbablyPython.Point
+        inputs = {"sizeX": 50, "sizeY": 50, "shouldSolve": None, "solveColor": 1, "isGif": None}
+        myimage = Image.new('RGBA', (inputs['sizeX'],inputs['sizeY']), color=(0,0,0,255))
+        img = myimage.load()
+        coordinates = {'pos': point(1, 1), 'entrancePos': point(1, 1),
+                       'exitPos': point(inputs['sizeX'] - 2, inputs['sizeY'] - 2)}
+        ProbablyPython.setEntranceExit(img, coordinates, [0,0,255,255], [0,0,0,255], inputs)
+        self.assertFalse(coordinates['entrancePos'].x > 1 and coordinates['entrancePos'].x < inputs['sizeX'] - 2
+                         and coordinates['entrancePos'].y > 1 and coordinates['entrancePos'].y < inputs['sizeY'] - 2)
+        self.assertFalse(coordinates['exitPos'].x > 1 and coordinates['exitPos'].x < inputs['sizeX'] - 2
+                         and coordinates['exitPos'].y > 1 and coordinates['exitPos'].y < inputs['sizeY'] - 2)
+
 
 class mazeIntegrationTests(unittest.TestCase):
     def test_mazeGen(self):
