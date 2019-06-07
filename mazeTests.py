@@ -4,6 +4,11 @@ import ProbablyPython
 
 class mazeUnitTests(unittest.TestCase):
 
+    def test_pointException(self):
+        with self.assertRaises(Exception) as context:
+            ProbablyPython.Point("0", "1")
+        self.assertTrue("Can not pass type string to class Point", str(context.exception))
+
     def test_setNextColor(self):
         inputs = {"sizeX": 50, "sizeY": 50, "shouldSolve": None, "solveColor": 1, "isGif": None}
         color = ProbablyPython.setNextColor(1, [0,0,255,255], [0,0,0,255], inputs)
