@@ -5,7 +5,8 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout: master
+      - checkout
       - run:
           name: Running tests
-          command: python mazeTests.py
+          command: |
+            pipenv run python manage.py test
