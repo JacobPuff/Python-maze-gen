@@ -10,10 +10,11 @@ class mazeUnitTests(unittest.TestCase):
         self.assertTrue("Can not pass type string to class Point", str(context.exception))
 
     def test_setNextColor(self):
-        inputs = {"sizeX": 50, "sizeY": 50, "shouldSolve": None, "solveColor": 1, "isGif": None}
-        color = ProbablyPython.setNextColor(1, [0,0,255,255], [0,0,0,255], inputs)
-        color = ProbablyPython.setNextColor(1, color, [0,0,0,255], inputs)
-        self.assertEqual([255,0,0,255], color)
+        inputs = {"sizeX": 51, "sizeY": 51, "shouldSolve": None, "solveColor": 1, "isGif": None}
+        foo = [0,0,0,255]
+        color = ProbablyPython.setNextColor(1, [255,0,0,255], [0,0,255,255], foo, foo, inputs)
+        color = ProbablyPython.setNextColor(1, color, [0,0,255,255], foo, foo, inputs)
+        self.assertEqual([0,0,255,255], color)
 
     def test_setEntranceExit(self):
         point = ProbablyPython.Point
