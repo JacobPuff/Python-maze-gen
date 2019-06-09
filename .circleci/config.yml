@@ -10,6 +10,7 @@ jobs:
           name: Installing dependencies
           command: |
             sudo pip install pillow
+            sudo pip install PIL
       - run:
           name: Running tests
           command: |
