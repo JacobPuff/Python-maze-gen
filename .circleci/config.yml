@@ -1,8 +1,10 @@
+version: 2
 jobs:
   build:
+    working_directory: ~/Python-maze-gen
     docker:
       - image: circleci/python:3.7
     steps:
       - run:
           name: Running tests
-          command: python ../mazeTests.py
+          command: python mazeTests.py
