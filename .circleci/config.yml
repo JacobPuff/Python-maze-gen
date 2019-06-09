@@ -1,0 +1,6 @@
+jobs:
+  build:
+    steps:
+      - run:
+          name: Running tests
+          command: python mazeTests.py
