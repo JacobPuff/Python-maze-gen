@@ -9,7 +9,7 @@ jobs:
       - run:
           name: Installing dependencies
           command: |
-            - pip install pillow
+            pip install pillow
       - run:
           name: Running tests
           command: |
