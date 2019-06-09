@@ -5,6 +5,7 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
+      - checkout: master
       - run:
           name: Running tests
           command: python mazeTests.py
