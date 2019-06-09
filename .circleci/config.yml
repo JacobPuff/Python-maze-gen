@@ -7,6 +7,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Installing dependencies
+          command: |
+            - pip install pillow
+      - run:
           name: Running tests
           command: |
             pipenv run python mazeTests.py test
