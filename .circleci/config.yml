@@ -5,4 +5,4 @@ jobs:
     steps:
       - run:
           name: Running tests
-          command: python mazeTests.py
+          command: python ../mazeTests.py
