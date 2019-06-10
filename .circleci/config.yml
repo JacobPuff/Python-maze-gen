@@ -11,8 +11,8 @@ jobs:
           command: |
             sudo pip install pipenv
             pipenv install
-            pipenv run sudo pip install pillow
       - run:
           name: Running tests
           command: |
+            pipenv run sudo pip install pillow
             pipenv run python mazeTests.py test
