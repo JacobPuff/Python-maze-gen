@@ -13,4 +13,4 @@ jobs:
       - run:
           name: Running tests
           command: |
-            python mazeTests.py test
+            python mazeTests.py
