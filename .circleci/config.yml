@@ -9,8 +9,10 @@ jobs:
       - run:
           name: Installing dependencies
           command: |
-            sudo pip install pillow
+            sudo pip install pipenv
+            pipenv install
+            pipenv run sudo pip install pillow
       - run:
           name: Running tests
           command: |
-            python mazeTests.py
+            pipenv run python mazeTests.py
