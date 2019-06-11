@@ -10,7 +10,7 @@ jobs:
           name: Installing dependencies
           command: |
             sudo pip install pipenv
-            sudo pip install pillow
+            pipenv install pillow
             pipenv install
       - run:
           name: Running tests
