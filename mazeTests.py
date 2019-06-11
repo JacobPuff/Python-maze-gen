@@ -40,7 +40,7 @@ class mazeIntegrationTests(unittest.TestCase):
             for y in range(image.size[1] - 1):
                 if x % 2 != 0 and y % 2 != 0:
                     testArray.append(img[x, y])
-                    self.assertEqual(img[x, y], (255, 0, 255, 255))
+                    self.assertEqual(img[x, y], (255, 255, 255, 255))
 
     def test_mazeGenWithSolution(self):
         inputsRecieved = {"sizeX": 51, "sizeY": 51, "shouldSolve": True, "solveColor": 1, "isGif": None}
