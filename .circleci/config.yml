@@ -11,7 +11,7 @@ jobs:
           command: |
             sudo pip install pipenv
             pipenv install
-            pipenv run sudo pip install pillow
+            sudo pip install pillow
       - run:
           name: Running tests
           command: |
