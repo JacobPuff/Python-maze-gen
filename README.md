@@ -1,4 +1,7 @@
 # Python-maze-gen
 Tis a thing.
 This is a maze generator. It can produce mazes of various sizes. You can produce mazes with solutions as well.
-Gifs are available, but resizing them is still in progress.
+Gifs are available. To use the program, you need to run it with python in the command line. It requires two numbers
+at least for the sizeX and sizeY values. For an unsolved maze you can use `python ProbablyPython.py 100 100`. For a
+solved maze you can use `python ProbablyPython.py 100 100 --shouldSolve --solveColor 2`. To make either of these
+into a gif, just add `--isGif` to the end.
